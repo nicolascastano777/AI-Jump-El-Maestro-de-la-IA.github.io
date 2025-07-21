@@ -187,10 +187,10 @@
         <div class="modal-content">
             <h2 id="modalTitle"></h2>
             <p id="modalMessage"></p>
-            <div id="questionOptions" class="options hidden">
+            <div id="questionOptions" class="options" style="display:none;">
                 <!-- Opciones de respuesta se insertarán aquí por JS -->
             </div>
-            <button id="startButton" class="start-button hidden">Comenzar Juego</button>
+            <button id="startButton" class="start-button" style="display:none;">Comenzar Juego</button>
         </div>
     </div>
 
@@ -290,8 +290,7 @@
                     "Gemini 2.5 Pro es para la transcripción de audio, y Gemini 2.5 Flash es para el análisis de datos avanzados.",
                     "Gemini 2.5 Pro es más rápido y económico, mientras que Gemini 2.5 Flash tiene una ventana de contexto de 1 millón de tokens.",
                     "Gemini 2.5 Pro es para razonamiento profundo y comprensión compleja, mientras que Gemini 2.5 Flash es para agilidad, eficiencia y alta velocidad en grandes volúmenes de tareas.",
-                    "Ambas versiones tienen las mismas capacidades y se usan indistintamente."
-                ],
+                 ],
                 correctAnswer: "Gemini 2.5 Pro es para razonamiento profundo y comprensión compleja, mientras que Gemini 2.5 Flash es para agilidad, eficiencia y alta velocidad en grandes volúmenes de tareas."
             },
             {
@@ -397,6 +396,11 @@
             updateUI();
             loadLevel(currentLevel);
             player = createPlayer();
+            // Ajuste: asegurar que el jugador esté sobre la plataforma y grounded
+            player.x = platforms[0].x + platforms[0].width / 2 - player.width / 2;
+            player.y = platforms[0].y - player.height;
+            player.grounded = true;
+            player.dy = 0;
             gameActive = true;
             gameModal.classList.remove('active'); // Ocultar modal si estaba visible
             requestAnimationFrame(gameLoop); // Iniciar el bucle del juego
@@ -414,11 +418,11 @@
             platforms = levelData[levelNum].platforms;
             levelObjective = levelData[levelNum].objective;
             player = createPlayer(); // Reiniciar posición del jugador
-            // Posición inicial del jugador en la primera plataforma del nivel
+            // Ajuste: asegurar que el jugador esté sobre la plataforma y grounded
             player.x = platforms[0].x + platforms[0].width / 2 - player.width / 2;
             player.y = platforms[0].y - player.height;
-            player.grounded = true; // Asegura que el jugador comienza en el suelo
-            player.dy = 0; // Asegura que no hay velocidad vertical inicial
+            player.grounded = true;
+            player.dy = 0;
         }
 
         // --- Actualizar UI ---
@@ -601,8 +605,8 @@
             modalTitle.textContent = `Pregunta de IA - Nivel ${currentLevel}`;
             modalMessage.textContent = currentQuestion.question;
             questionOptions.innerHTML = ''; // Limpiar opciones anteriores
-            questionOptions.classList.remove('hidden');
-            startButton.classList.add('hidden'); // Ocultar botón de inicio
+            questionOptions.style.display = 'block';
+            startButton.style.display = 'none'; // Ocultar botón de inicio
 
             currentQuestion.options.forEach(option => {
                 const button = document.createElement('button');
@@ -653,14 +657,16 @@
                 // Mostrar un mensaje breve de que perdió una vida (opcional)
                 modalTitle.textContent = "¡Respuesta Incorrecta!";
                 modalMessage.textContent = `Has perdido una vida. Te quedan ${lives}.`;
-                questionOptions.classList.add('hidden');
-                startButton.classList.remove('hidden');
+                questionOptions.style.display = 'none';
+                startButton.style.display = 'block';
+                startButton.focus(); // <-- Asegura el foco en el botón
                 startButton.textContent = "Continuar";
                 startButton.onclick = () => {
                     gameModal.classList.remove('active');
                     gameActive = true;
                     requestAnimationFrame(gameLoop); // Asegurar que el bucle se reanude
                 };
+                // El listener global para Enter ya está activo desde window.onload
                 gameModal.classList.add('active');
             }
         }
@@ -670,8 +676,9 @@
             gameActive = false;
             modalTitle.textContent = "¡GAME OVER!";
             modalMessage.textContent = "Has perdido todas tus vidas. ¡No te rindas! ¡Sigue aprendiendo sobre IA!";
-            questionOptions.classList.add('hidden');
-            startButton.classList.remove('hidden');
+            questionOptions.style.display = 'none';
+            startButton.style.display = 'block';
+            startButton.focus(); // <-- Asegura el foco en el botón
             startButton.textContent = "Volver a Jugar";
             startButton.onclick = initGame; // Reiniciar el juego
             gameModal.classList.add('active');
@@ -682,11 +689,22 @@
             gameActive = false;
             modalTitle.textContent = "¡FELICIDADES! ¡GANASTE!";
             modalMessage.textContent = "¡Ahora eres un MAESTRO DE LA IA!";
-            questionOptions.classList.add('hidden');
-            startButton.classList.remove('hidden');
+            questionOptions.style.display = 'none';
+            startButton.style.display = 'block';
+            startButton.focus(); // <-- Asegura el foco en el botón
             startButton.textContent = "Volver a Jugar";
             startButton.onclick = initGame; // Ofrecer reiniciar
             gameModal.classList.add('active');
+        }
+
+        // --- Listener global para Enter sobre startButton (si no existe) ---
+        if (!window._startButtonEnterListener) {
+            window._startButtonEnterListener = function(e) {
+                if ((e.key === 'Enter' || e.keyCode === 13) && startButton.style.display !== 'none' && gameModal.classList.contains('active')) {
+                    startButton.click();
+                }
+            };
+            document.addEventListener('keydown', window._startButtonEnterListener);
         }
 
         // --- Iniciar el juego al cargar la página ---
@@ -694,8 +712,9 @@
             // Mostrar modal de bienvenida
             modalTitle.textContent = "¡Bienvenido a AI Jump!";
             modalMessage.textContent = "Salta a través de los niveles y alcanza el chip de IA para responder preguntas y convertirte en un Maestro. ¡Tienes 3 vidas!";
-            questionOptions.classList.add('hidden');
-            startButton.classList.remove('hidden');
+            questionOptions.style.display = 'none';
+            startButton.style.display = 'block';
+            startButton.focus(); // <-- Asegura el foco en el botón
             startButton.textContent = "Comenzar Juego";
             startButton.onclick = initGame;
             gameModal.classList.add('active');
